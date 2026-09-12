@@ -1,23 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
 const prisma = require('../lib/prisma');
 const { categorizeTransaction } = require('../services/aiService');
-
-// Middleware simples de autenticação: extrai o userId do token JWT
-function authMiddleware(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return res.status(401).json({ error: 'Token não fornecido' });
-
-  const token = authHeader.split(' ')[1]; // formato: "Bearer <token>"
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = decoded.userId;
-    next();
-  } catch (error) {
-    return res.status(401).json({ error: 'Token inválido' });
-  }
-}
+const authMiddleware = require('../middleware/auth');
 
 router.use(authMiddleware);
 
@@ -35,15 +20,15 @@ router.post('/', async (req, res) => {
   }
 
   const transaction = await prisma.transaction.create({
-  data: {
-    amount,
-    type,
-    description,
-    userId: req.userId,
-    categoryId: category.id,
-  },
-  include: { category: true },
-});
+    data: {
+      amount,
+      type,
+      description,
+      userId: req.userId,
+      categoryId: category.id,
+    },
+    include: { category: true },
+  });
 
   res.json(transaction);
 });

@@ -19,6 +19,17 @@ model User {
   email     String   @unique
   password  String
   transactions Transaction[]
+  financialProfile FinancialProfile?
+}
+
+model FinancialProfile {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @unique
+  monthlyIncome  Float    @default(0)
+  fixedExpenses  Float    @default(0)
+  workingCapital Float    @default(0)
+  creditTypes    Json?
+  user           User     @relation(fields: [userId], references: [id])
 }
 
 model Category {
