@@ -23,17 +23,18 @@ model User {
 
 model Category {
   id           Int      @id @default(autoincrement())
-  name         String
+  name         String   @unique
   transactions Transaction[]
 }
 
 model Transaction {
-  id         Int      @id @default(autoincrement())
-  amount     Float
-  type       String
-  date       DateTime @default(now())
-  userId     Int
-  categoryId Int
-  user       User     @relation(fields: [userId], references: [id])
-  category   Category @relation(fields: [categoryId], references: [id])
+  id          Int      @id @default(autoincrement())
+  amount      Float
+  type        String
+  description String
+  date        DateTime @default(now())
+  userId      Int
+  categoryId  Int
+  user        User     @relation(fields: [userId], references: [id])
+  category    Category @relation(fields: [categoryId], references: [id])
 }

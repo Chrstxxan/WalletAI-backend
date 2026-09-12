@@ -23,4 +23,18 @@ router.post('/login', async (req, res) => {
   res.json({ token });
 });
 
+router.post('/reset-password', async (req, res) => {
+  const { email, newPassword } = req.body;
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    return res.status(404).json({ error: 'Usuário não encontrado' });
+  }
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({
+    where: { email },
+    data: { password: hashedPassword }
+  });
+  res.json({ message: 'Senha atualizada com sucesso' });
+});
+
 module.exports = router;
