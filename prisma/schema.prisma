@@ -18,16 +18,60 @@ model User {
   id               Int                @id @default(autoincrement())
   email            String             @unique
   password         String
+  name             String?
   transactions     Transaction[]
   financialProfile FinancialProfile?
   incomeSources    IncomeSource[]
   fixedExpenses    FixedExpense[]
+  chatMessages     ChatMessage[]
+  creditCards      CreditCard[]
+}
+
+model CreditCard {
+  id       Int           @id @default(autoincrement())
+  userId   Int
+  name     String
+  limit    Float
+  user     User          @relation(fields: [userId], references: [id])
+  invoices CardInvoice[]
+}
+
+model CardInvoice {
+  id     Int               @id @default(autoincrement())
+  cardId Int
+  month  Int
+  year   Int
+  card   CreditCard        @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  items  CardInvoiceItem[]
+
+  @@unique([cardId, month, year])
+}
+
+model CardInvoiceItem {
+  id                 Int         @id @default(autoincrement())
+  invoiceId          Int
+  description        String
+  installmentAmount  Float
+  currentInstallment Int
+  totalInstallments  Int
+  category           String?
+  invoice            CardInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  role      String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model FinancialProfile {
   id             Int      @id @default(autoincrement())
   userId         Int      @unique
   workingCapital Float    @default(0)
+  savingsGoal    Float    @default(0)
   creditTypes    Json?
   user           User     @relation(fields: [userId], references: [id])
 }

@@ -8,16 +8,16 @@ router.use(authMiddleware);
 // Buscar o perfil financeiro (sem a renda, que agora é calculada separadamente)
 router.get('/profile', async (req, res) => {
   const profile = await prisma.financialProfile.findUnique({ where: { userId: req.userId } });
-  res.json(profile || { workingCapital: 0, creditTypes: [] });
+  res.json(profile || { workingCapital: 0, savingsGoal: 0, creditTypes: [] });
 });
 
-// Criar ou atualizar despesas fixas, capital de giro e tipos de crédito
+// Criar ou atualizar despesas fixas, meta de economia, capital de giro e tipos de crédito
 router.put('/profile', async (req, res) => {
-  const { workingCapital, creditTypes } = req.body;
+  const { workingCapital, savingsGoal, creditTypes } = req.body;
   const profile = await prisma.financialProfile.upsert({
     where: { userId: req.userId },
-    update: { workingCapital, creditTypes },
-    create: { userId: req.userId, workingCapital, creditTypes },
+    update: { workingCapital, savingsGoal, creditTypes },
+    create: { userId: req.userId, workingCapital, savingsGoal, creditTypes },
   });
   res.json(profile);
 });
@@ -71,9 +71,17 @@ router.get('/dashboard', async (req, res) => {
   const fixedExpenseItems = await prisma.fixedExpense.findMany({ where: { userId: req.userId } });
   const fixedExpenses = fixedExpenseItems.reduce((sum, i) => sum + i.amount, 0);
 
+  const savingsGoal = profile?.savingsGoal || 0;
+
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+  const cardInvoices = await prisma.cardInvoice.findMany({
+    where: { month: now.getMonth() + 1, year: now.getFullYear(), card: { userId: req.userId } },
+    include: { items: true },
+  });
+  const totalFaturaCartoes = cardInvoices.reduce((sum, inv) => sum + inv.items.reduce((s, i) => s + i.installmentAmount, 0), 0);
 
   const transactions = await prisma.transaction.findMany({
     where: { userId: req.userId, date: { gte: startOfMonth, lte: endOfMonth } },
@@ -83,7 +91,7 @@ router.get('/dashboard', async (req, res) => {
   const totalDespesas = transactions.filter(t => t.type === 'despesa').reduce((sum, t) => sum + t.amount, 0);
   const totalReceitas = transactions.filter(t => t.type === 'receita').reduce((sum, t) => sum + t.amount, 0);
 
-  const limiteLivre = monthlyIncome - fixedExpenses;
+  const limiteLivre = monthlyIncome - fixedExpenses - savingsGoal - totalFaturaCartoes;
   const disponivel = limiteLivre - totalDespesas;
   const percentualUsado = limiteLivre > 0 ? (totalDespesas / limiteLivre) * 100 : 0;
 
@@ -98,6 +106,8 @@ router.get('/dashboard', async (req, res) => {
     monthlyIncome: arredondar(monthlyIncome),
     totalDespesas: arredondar(totalDespesas),
     totalReceitas: arredondar(totalReceitas),
+    totalFaturaCartoes: arredondar(totalFaturaCartoes),
+    fixedExpenses: arredondar(fixedExpenses),
     limiteLivre: arredondar(limiteLivre),
     disponivel: arredondar(disponivel),
     percentualUsado: Math.round(percentualUsado),

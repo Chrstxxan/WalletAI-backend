@@ -1,3 +1,4 @@
+const authMiddleware = require('../middleware/auth');
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
@@ -35,6 +36,24 @@ router.post('/reset-password', async (req, res) => {
     data: { password: hashedPassword }
   });
   res.json({ message: 'Senha atualizada com sucesso' });
+});
+
+router.get('/me', authMiddleware, async (req, res) => {
+  const user = await prisma.user.findUnique({
+    where: { id: req.userId },
+    select: { id: true, email: true, name: true },
+  });
+  res.json(user);
+});
+
+router.put('/me', authMiddleware, async (req, res) => {
+  const { name, email } = req.body;
+  const updated = await prisma.user.update({
+    where: { id: req.userId },
+    data: { name, email },
+    select: { id: true, email: true, name: true },
+  });
+  res.json(updated);
 });
 
 module.exports = router;
