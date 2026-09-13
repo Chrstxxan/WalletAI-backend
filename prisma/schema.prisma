@@ -15,21 +15,37 @@ generator client {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
-  transactions Transaction[]
+  id               Int                @id @default(autoincrement())
+  email            String             @unique
+  password         String
+  transactions     Transaction[]
   financialProfile FinancialProfile?
+  incomeSources    IncomeSource[]
+  fixedExpenses    FixedExpense[]
 }
 
 model FinancialProfile {
   id             Int      @id @default(autoincrement())
   userId         Int      @unique
-  monthlyIncome  Float    @default(0)
-  fixedExpenses  Float    @default(0)
   workingCapital Float    @default(0)
   creditTypes    Json?
   user           User     @relation(fields: [userId], references: [id])
+}
+
+model IncomeSource {
+  id          Int    @id @default(autoincrement())
+  userId      Int
+  description String
+  amount      Float
+  user        User   @relation(fields: [userId], references: [id])
+}
+
+model FixedExpense {
+  id          Int    @id @default(autoincrement())
+  userId      Int
+  description String
+  amount      Float
+  user        User   @relation(fields: [userId], references: [id])
 }
 
 model Category {

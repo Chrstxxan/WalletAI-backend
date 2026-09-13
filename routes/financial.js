@@ -5,21 +5,57 @@ const authMiddleware = require('../middleware/auth');
 
 router.use(authMiddleware);
 
-// Buscar o perfil financeiro do usuário
+// Buscar o perfil financeiro (sem a renda, que agora é calculada separadamente)
 router.get('/profile', async (req, res) => {
   const profile = await prisma.financialProfile.findUnique({ where: { userId: req.userId } });
-  res.json(profile || { monthlyIncome: 0, fixedExpenses: 0, workingCapital: 0, creditTypes: [] });
+  res.json(profile || { workingCapital: 0, creditTypes: [] });
 });
 
-// Criar ou atualizar o perfil financeiro
+// Criar ou atualizar despesas fixas, capital de giro e tipos de crédito
 router.put('/profile', async (req, res) => {
-  const { monthlyIncome, fixedExpenses, workingCapital, creditTypes } = req.body;
+  const { workingCapital, creditTypes } = req.body;
   const profile = await prisma.financialProfile.upsert({
     where: { userId: req.userId },
-    update: { monthlyIncome, fixedExpenses, workingCapital, creditTypes },
-    create: { userId: req.userId, monthlyIncome, fixedExpenses, workingCapital, creditTypes },
+    update: { workingCapital, creditTypes },
+    create: { userId: req.userId, workingCapital, creditTypes },
   });
   res.json(profile);
+});
+
+// Listar as fontes de renda do usuário
+router.get('/income-sources', async (req, res) => {
+  const sources = await prisma.incomeSource.findMany({ where: { userId: req.userId } });
+  res.json(sources);
+});
+
+// Substituir a lista inteira de fontes de renda (mais simples que editar uma por uma)
+router.put('/income-sources', async (req, res) => {
+  const { sources } = req.body; // [{ description, amount }, ...]
+  await prisma.incomeSource.deleteMany({ where: { userId: req.userId } });
+  if (sources && sources.length > 0) {
+    await prisma.incomeSource.createMany({
+      data: sources.map(s => ({ userId: req.userId, description: s.description, amount: s.amount })),
+    });
+  }
+  const updated = await prisma.incomeSource.findMany({ where: { userId: req.userId } });
+  res.json(updated);
+});
+
+router.get('/fixed-expenses', async (req, res) => {
+  const items = await prisma.fixedExpense.findMany({ where: { userId: req.userId } });
+  res.json(items);
+});
+
+router.put('/fixed-expenses', async (req, res) => {
+  const { items } = req.body;
+  await prisma.fixedExpense.deleteMany({ where: { userId: req.userId } });
+  if (items && items.length > 0) {
+    await prisma.fixedExpense.createMany({
+      data: items.map(i => ({ userId: req.userId, description: i.description, amount: i.amount })),
+    });
+  }
+  const updated = await prisma.fixedExpense.findMany({ where: { userId: req.userId } });
+  res.json(updated);
 });
 
 function arredondar(valor) {
@@ -29,6 +65,11 @@ function arredondar(valor) {
 // Dashboard: resumo do mês atual com cálculos
 router.get('/dashboard', async (req, res) => {
   const profile = await prisma.financialProfile.findUnique({ where: { userId: req.userId } });
+  const incomeSources = await prisma.incomeSource.findMany({ where: { userId: req.userId } });
+  const monthlyIncome = incomeSources.reduce((sum, s) => sum + s.amount, 0);
+
+  const fixedExpenseItems = await prisma.fixedExpense.findMany({ where: { userId: req.userId } });
+  const fixedExpenses = fixedExpenseItems.reduce((sum, i) => sum + i.amount, 0);
 
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -42,8 +83,6 @@ router.get('/dashboard', async (req, res) => {
   const totalDespesas = transactions.filter(t => t.type === 'despesa').reduce((sum, t) => sum + t.amount, 0);
   const totalReceitas = transactions.filter(t => t.type === 'receita').reduce((sum, t) => sum + t.amount, 0);
 
-  const monthlyIncome = profile?.monthlyIncome || 0;
-  const fixedExpenses = profile?.fixedExpenses || 0;
   const limiteLivre = monthlyIncome - fixedExpenses;
   const disponivel = limiteLivre - totalDespesas;
   const percentualUsado = limiteLivre > 0 ? (totalDespesas / limiteLivre) * 100 : 0;
@@ -56,6 +95,7 @@ router.get('/dashboard', async (req, res) => {
 
   res.json({
     profile: profile || null,
+    monthlyIncome: arredondar(monthlyIncome),
     totalDespesas: arredondar(totalDespesas),
     totalReceitas: arredondar(totalReceitas),
     limiteLivre: arredondar(limiteLivre),
