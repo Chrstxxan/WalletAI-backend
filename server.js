@@ -5,6 +5,7 @@ const transactionRoutes = require('./routes/transactions');
 const financialRoutes = require('./routes/financial');
 const chatRoutes = require('./routes/chat');
 const creditCardRoutes = require('./routes/creditcards');
+const goalRoutes = require('./routes/goals');
 
 const app = express();
 app.use(express.json());
@@ -14,6 +15,7 @@ app.use('/chat', chatRoutes);
 app.use('/transactions', transactionRoutes);
 app.use('/financial', financialRoutes);
 app.use('/credit-cards', creditCardRoutes);
+app.use('/goals', goalRoutes);
 
 app.get('/', (req, res) => res.send('API funcionando!'));
 

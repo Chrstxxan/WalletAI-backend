@@ -125,4 +125,25 @@ router.get('/summary', async (req, res) => {
   });
 });
 
+router.get('/:cardId/invoices', async (req, res) => {
+  const card = await prisma.creditCard.findUnique({ where: { id: Number(req.params.cardId) } });
+  if (!card || card.userId !== req.userId) return res.status(404).json({ error: 'Cartão não encontrado' });
+
+  const invoices = await prisma.cardInvoice.findMany({
+    where: { cardId: card.id },
+    include: { items: true },
+    orderBy: [{ year: 'desc' }, { month: 'desc' }],
+  });
+
+  const result = invoices.map(inv => ({
+    id: inv.id,
+    month: inv.month,
+    year: inv.year,
+    total: Math.round(inv.items.reduce((s, i) => s + i.installmentAmount, 0) * 100) / 100,
+    items: inv.items,
+  }));
+
+  res.json(result);
+});
+
 module.exports = router;

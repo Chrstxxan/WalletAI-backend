@@ -15,25 +15,32 @@ generator client {
 }
 
 model User {
-  id               Int                @id @default(autoincrement())
-  email            String             @unique
-  password         String
-  name             String?
-  transactions     Transaction[]
-  financialProfile FinancialProfile?
-  incomeSources    IncomeSource[]
-  fixedExpenses    FixedExpense[]
-  chatMessages     ChatMessage[]
-  creditCards      CreditCard[]
+  id                  Int                   @id @default(autoincrement())
+  email               String                @unique
+  password            String
+  name                String?
+  lastSeenMonth       Int?
+  lastSeenYear        Int?
+  transactions        Transaction[]
+  financialProfile    FinancialProfile?
+  incomeSources       IncomeSource[]
+  fixedExpenses       FixedExpense[]
+  chatMessages        ChatMessage[]
+  creditCards         CreditCard[]
+  fixedExpenseRecords FixedExpenseRecord[]
+  incomeRecords       IncomeRecord[]
+  categoryBudgets     CategoryBudget[]
+  goals               Goal[]
 }
 
 model CreditCard {
-  id       Int           @id @default(autoincrement())
-  userId   Int
-  name     String
-  limit    Float
-  user     User          @relation(fields: [userId], references: [id])
-  invoices CardInvoice[]
+  id            Int            @id @default(autoincrement())
+  userId        Int
+  name          String
+  limit         Float
+  user          User           @relation(fields: [userId], references: [id])
+  invoices      CardInvoice[]
+  fixedExpenses FixedExpense[]
 }
 
 model CardInvoice {
@@ -48,14 +55,18 @@ model CardInvoice {
 }
 
 model CardInvoiceItem {
-  id                 Int         @id @default(autoincrement())
+  id                 Int           @id @default(autoincrement())
   invoiceId          Int
+  fixedExpenseId     Int?
   description        String
   installmentAmount  Float
   currentInstallment Int
   totalInstallments  Int
   category           String?
-  invoice            CardInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice            CardInvoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  fixedExpense       FixedExpense? @relation(fields: [fixedExpenseId], references: [id], onDelete: Cascade)
+
+  @@unique([invoiceId, fixedExpenseId])
 }
 
 model ChatMessage {
@@ -77,25 +88,89 @@ model FinancialProfile {
 }
 
 model IncomeSource {
-  id          Int    @id @default(autoincrement())
+  id          Int            @id @default(autoincrement())
   userId      Int
   description String
   amount      Float
-  user        User   @relation(fields: [userId], references: [id])
+  recorrente  Boolean        @default(true)
+  month       Int?
+  year        Int?
+  user        User           @relation(fields: [userId], references: [id])
+  records     IncomeRecord[]
+}
+
+model IncomeRecord {
+  id             Int          @id @default(autoincrement())
+  incomeSourceId Int
+  userId         Int
+  month          Int
+  year           Int
+  amount         Float
+  description    String
+  isReceived     Boolean      @default(false)
+  receivedAt     DateTime?
+  incomeSource   IncomeSource @relation(fields: [incomeSourceId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@unique([incomeSourceId, month, year])
 }
 
 model FixedExpense {
-  id          Int    @id @default(autoincrement())
-  userId      Int
-  description String
-  amount      Float
-  user        User   @relation(fields: [userId], references: [id])
+  id           Int                  @id @default(autoincrement())
+  userId       Int
+  description  String
+  amount       Float
+  recorrente   Boolean              @default(true)
+  month        Int?
+  year         Int?
+  creditCardId Int?
+  user         User                 @relation(fields: [userId], references: [id])
+  creditCard   CreditCard?          @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
+  records      FixedExpenseRecord[]
+  invoiceItems CardInvoiceItem[]
+}
+
+model FixedExpenseRecord {
+  id             Int          @id @default(autoincrement())
+  fixedExpenseId Int
+  userId         Int
+  month          Int
+  year           Int
+  amount         Float
+  description    String
+  isPaid         Boolean      @default(false)
+  paidAt         DateTime?
+  fixedExpense   FixedExpense @relation(fields: [fixedExpenseId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@unique([fixedExpenseId, month, year])
 }
 
 model Category {
-  id           Int      @id @default(autoincrement())
-  name         String   @unique
+  id           Int              @id @default(autoincrement())
+  name         String           @unique
   transactions Transaction[]
+  budgets      CategoryBudget[]
+}
+
+model CategoryBudget {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  categoryId Int
+  limit      Float
+  user       User     @relation(fields: [userId], references: [id])
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  @@unique([userId, categoryId])
+}
+
+model Goal {
+  id            Int    @id @default(autoincrement())
+  userId        Int
+  description   String
+  targetAmount  Float
+  currentAmount Float  @default(0)
+  user          User   @relation(fields: [userId], references: [id])
 }
 
 model Transaction {

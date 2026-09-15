@@ -43,6 +43,33 @@ router.get('/', async (req, res) => {
   res.json(transactions);
 });
 
+router.put('/:id', async (req, res) => {
+  const { id } = req.params;
+  const { amount, type, description } = req.body;
+
+  const transaction = await prisma.transaction.findUnique({ where: { id: Number(id) } });
+  if (!transaction || transaction.userId !== req.userId) {
+    return res.status(404).json({ error: 'Transação não encontrada' });
+  }
+
+  const categoriaSugerida = await categorizeTransaction(description);
+
+  let category = await prisma.category.findFirst({
+    where: { name: categoriaSugerida }
+  });
+  if (!category) {
+    category = await prisma.category.create({ data: { name: categoriaSugerida } });
+  }
+
+  const updated = await prisma.transaction.update({
+    where: { id: Number(id) },
+    data: { amount, type, description, categoryId: category.id },
+    include: { category: true },
+  });
+
+  res.json(updated);
+});
+
 router.delete('/:id', async (req, res) => {
   const { id } = req.params;
   const transaction = await prisma.transaction.findUnique({ where: { id: Number(id) } });
