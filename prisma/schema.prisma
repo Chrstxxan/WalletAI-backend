@@ -31,6 +31,7 @@ model User {
   incomeRecords       IncomeRecord[]
   categoryBudgets     CategoryBudget[]
   goals               Goal[]
+  benefitWallets      BenefitWallet[]
 }
 
 model CreditCard {
@@ -174,13 +175,26 @@ model Goal {
 }
 
 model Transaction {
-  id          Int      @id @default(autoincrement())
-  amount      Float
-  type        String
-  description String
-  date        DateTime @default(now())
-  userId      Int
-  categoryId  Int
-  user        User     @relation(fields: [userId], references: [id])
-  category    Category @relation(fields: [categoryId], references: [id])
+  id              Int            @id @default(autoincrement())
+  amount          Float
+  type            String
+  description     String
+  date            DateTime       @default(now())
+  userId          Int
+  categoryId      Int
+  benefitWalletId Int?
+  user            User           @relation(fields: [userId], references: [id])
+  category        Category       @relation(fields: [categoryId], references: [id])
+  benefitWallet   BenefitWallet? @relation(fields: [benefitWalletId], references: [id], onDelete: SetNull)
+}
+
+model BenefitWallet {
+  id           Int           @id @default(autoincrement())
+  userId       Int
+  type         String
+  balance      Float         @default(0)
+  user         User          @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+
+  @@unique([userId, type])
 }

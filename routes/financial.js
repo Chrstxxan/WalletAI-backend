@@ -360,7 +360,10 @@ async function computeMonthlyFinancials(userId, month, year) {
     include: { category: true },
   });
 
-  const totalDespesas = transactions.filter(t => t.type === 'despesa').reduce((sum, t) => sum + t.amount, 0);
+  // despesas pagas com carteira de benefício (VR/VA/Combustível) são dinheiro separado —
+  // não entram no "disponível pra gastar" nem nos gráficos de categoria (ver benefit-wallets.tsx)
+  const despesasProprias = transactions.filter(t => t.type === 'despesa' && !t.benefitWalletId);
+  const totalDespesas = despesasProprias.reduce((sum, t) => sum + t.amount, 0);
   const totalReceitas = transactions.filter(t => t.type === 'receita').reduce((sum, t) => sum + t.amount, 0);
 
   const limiteLivre = monthlyIncome - fixedExpenses - savingsGoal - totalFaturaCartoes;
@@ -368,7 +371,7 @@ async function computeMonthlyFinancials(userId, month, year) {
   const percentualUsado = limiteLivre > 0 ? (totalDespesas / limiteLivre) * 100 : 0;
 
   const porCategoria = {};
-  transactions.filter(t => t.type === 'despesa').forEach(t => {
+  despesasProprias.forEach(t => {
     const nome = t.category.name;
     porCategoria[nome] = (porCategoria[nome] || 0) + t.amount;
   });
@@ -414,7 +417,7 @@ router.get('/category-budgets', async (req, res) => {
   const budgetByName = new Map(budgets.map(b => [b.category.name, b.limit]));
 
   const transactions = await prisma.transaction.findMany({
-    where: { userId: req.userId, type: 'despesa', date: { gte: startOfMonth, lte: endOfMonth } },
+    where: { userId: req.userId, type: 'despesa', benefitWalletId: null, date: { gte: startOfMonth, lte: endOfMonth } },
     include: { category: true },
   });
   const gastoPorCategoria = {};

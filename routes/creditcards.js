@@ -74,6 +74,27 @@ router.post('/:cardId/invoice-items', async (req, res) => {
   res.json(item);
 });
 
+router.put('/invoice-items/:id', async (req, res) => {
+  const item = await prisma.cardInvoiceItem.findUnique({
+    where: { id: Number(req.params.id) },
+    include: { invoice: { include: { card: true } } },
+  });
+  if (!item || item.invoice.card.userId !== req.userId) return res.status(404).json({ error: 'Item não encontrado' });
+
+  const { description, installmentAmount, currentInstallment, totalInstallments, category } = req.body;
+  const updated = await prisma.cardInvoiceItem.update({
+    where: { id: item.id },
+    data: {
+      description: description ?? item.description,
+      installmentAmount: installmentAmount !== undefined ? Number(installmentAmount) : item.installmentAmount,
+      currentInstallment: currentInstallment !== undefined ? Number(currentInstallment) : item.currentInstallment,
+      totalInstallments: totalInstallments !== undefined ? Number(totalInstallments) : item.totalInstallments,
+      category: category !== undefined ? (category || null) : item.category,
+    },
+  });
+  res.json(updated);
+});
+
 router.delete('/invoice-items/:id', async (req, res) => {
   const item = await prisma.cardInvoiceItem.findUnique({
     where: { id: Number(req.params.id) },

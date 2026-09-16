@@ -9,4 +9,21 @@ async function categorizeTransaction(description) {
   return response.choices[0].message.content.trim();
 }
 
-module.exports = { categorizeTransaction };
+const REGRAS_BENEFICIO = {
+  VR: 'restaurantes, delivery de comida (iFood, Rappi) e às vezes mercado/supermercado',
+  VA: 'mercado/supermercado',
+  'Combustível': 'postos de combustível/gasolina',
+};
+
+async function validarCompatibilidadeBeneficio(description, tipoBeneficio) {
+  const regras = REGRAS_BENEFICIO[tipoBeneficio];
+  const response = await groq.chat.completions.create({
+    model: 'openai/gpt-oss-120b',
+    messages: [{ role: 'user', content:
+      `Um cartão de benefício do tipo ${tipoBeneficio} normalmente só é aceito em ${regras}. ` +
+      `A transação "${description}" seria tipicamente aceita nesse tipo de cartão? Responda só SIM ou NÃO.` }],
+  });
+  return response.choices[0].message.content.trim().toUpperCase().startsWith('SIM');
+}
+
+module.exports = { categorizeTransaction, validarCompatibilidadeBeneficio };
