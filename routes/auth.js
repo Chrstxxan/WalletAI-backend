@@ -53,6 +53,14 @@ router.get('/me', authMiddleware, async (req, res) => {
   res.json(user);
 });
 
+router.post('/complete-onboarding', authMiddleware, async (req, res) => {
+  await prisma.user.update({
+    where: { id: req.userId },
+    data: { onboardingCompletedAt: new Date() },
+  });
+  res.json({ ok: true });
+});
+
 router.put('/me', authMiddleware, async (req, res) => {
   const { name, email } = req.body;
   const updated = await prisma.user.update({

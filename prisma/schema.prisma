@@ -21,6 +21,7 @@ model User {
   name                String?
   lastSeenMonth       Int?
   lastSeenYear        Int?
+  onboardingCompletedAt DateTime?
   transactions        Transaction[]
   financialProfile    FinancialProfile?
   incomeSources       IncomeSource[]

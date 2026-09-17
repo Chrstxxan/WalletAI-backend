@@ -503,20 +503,21 @@ router.get('/month-status', async (req, res) => {
 
   const user = await prisma.user.findUnique({
     where: { id: req.userId },
-    select: { lastSeenMonth: true, lastSeenYear: true },
+    select: { lastSeenMonth: true, lastSeenYear: true, onboardingCompletedAt: true },
   });
+  const onboardingCompleted = !!user.onboardingCompletedAt;
 
   if (!user.lastSeenMonth || !user.lastSeenYear) {
     await prisma.user.update({
       where: { id: req.userId },
       data: { lastSeenMonth: currentMonth, lastSeenYear: currentYear },
     });
-    return res.json({ needsClosing: false, lastSeenMonth: currentMonth, lastSeenYear: currentYear, currentMonth, currentYear });
+    return res.json({ needsClosing: false, lastSeenMonth: currentMonth, lastSeenYear: currentYear, currentMonth, currentYear, onboardingCompleted });
   }
 
   const needsClosing = user.lastSeenYear < currentYear || (user.lastSeenYear === currentYear && user.lastSeenMonth < currentMonth);
 
-  res.json({ needsClosing, lastSeenMonth: user.lastSeenMonth, lastSeenYear: user.lastSeenYear, currentMonth, currentYear });
+  res.json({ needsClosing, lastSeenMonth: user.lastSeenMonth, lastSeenYear: user.lastSeenYear, currentMonth, currentYear, onboardingCompleted });
 });
 
 router.post('/acknowledge-month', async (req, res) => {
