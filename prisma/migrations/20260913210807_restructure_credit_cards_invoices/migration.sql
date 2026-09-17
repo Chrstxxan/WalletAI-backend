@@ -1,17 +1,17 @@
 /*
   Warnings:
 
-  - You are about to drop the `cardpurchase` table. If the table is not empty, all the data it contains will be lost.
+  - You are about to drop the `CardPurchase` table. If the table is not empty, all the data it contains will be lost.
 
 */
 -- DropForeignKey
-ALTER TABLE `cardpurchase` DROP FOREIGN KEY `CardPurchase_cardId_fkey`;
+ALTER TABLE `CardPurchase` DROP FOREIGN KEY `CardPurchase_cardId_fkey`;
 
 -- AlterTable
-ALTER TABLE `creditcard` ALTER COLUMN `limit` DROP DEFAULT;
+ALTER TABLE `CreditCard` ALTER COLUMN `limit` DROP DEFAULT;
 
 -- DropTable
-DROP TABLE `cardpurchase`;
+DROP TABLE `CardPurchase`;
 
 -- CreateTable
 CREATE TABLE `CardInvoice` (

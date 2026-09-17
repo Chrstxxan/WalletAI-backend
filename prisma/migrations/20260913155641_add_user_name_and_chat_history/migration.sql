@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE `user` ADD COLUMN `name` VARCHAR(191) NULL;
+ALTER TABLE `User` ADD COLUMN `name` VARCHAR(191) NULL;
 
 -- CreateTable
 CREATE TABLE `ChatMessage` (

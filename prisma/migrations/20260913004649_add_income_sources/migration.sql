@@ -1,11 +1,11 @@
 /*
   Warnings:
 
-  - You are about to drop the column `monthlyIncome` on the `financialprofile` table. All the data in the column will be lost.
+  - You are about to drop the column `monthlyIncome` on the `FinancialProfile` table. All the data in the column will be lost.
 
 */
 -- AlterTable
-ALTER TABLE `financialprofile` DROP COLUMN `monthlyIncome`;
+ALTER TABLE `FinancialProfile` DROP COLUMN `monthlyIncome`;
 
 -- CreateTable
 CREATE TABLE `IncomeSource` (

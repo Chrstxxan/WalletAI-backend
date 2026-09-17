@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE `transaction` ADD COLUMN `benefitWalletId` INTEGER NULL;
+ALTER TABLE `Transaction` ADD COLUMN `benefitWalletId` INTEGER NULL;
 
 -- CreateTable
 CREATE TABLE `BenefitWallet` (

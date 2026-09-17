@@ -1,11 +1,11 @@
 /*
   Warnings:
 
-  - You are about to drop the column `fixedExpenses` on the `financialprofile` table. All the data in the column will be lost.
+  - You are about to drop the column `fixedExpenses` on the `FinancialProfile` table. All the data in the column will be lost.
 
 */
 -- AlterTable
-ALTER TABLE `financialprofile` DROP COLUMN `fixedExpenses`;
+ALTER TABLE `FinancialProfile` DROP COLUMN `fixedExpenses`;
 
 -- CreateTable
 CREATE TABLE `FixedExpense` (

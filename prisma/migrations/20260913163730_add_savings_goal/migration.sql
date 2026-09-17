@@ -1,2 +1,2 @@
 -- AlterTable
-ALTER TABLE `financialprofile` ADD COLUMN `savingsGoal` DOUBLE NOT NULL DEFAULT 0;
+ALTER TABLE `FinancialProfile` ADD COLUMN `savingsGoal` DOUBLE NOT NULL DEFAULT 0;
