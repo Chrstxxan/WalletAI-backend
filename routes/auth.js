@@ -50,6 +50,7 @@ router.get('/me', authMiddleware, async (req, res) => {
     where: { id: req.userId },
     select: { id: true, email: true, name: true },
   });
+  if (!user) return res.status(401).json({ error: 'Sessão inválida' });
   res.json(user);
 });
 
